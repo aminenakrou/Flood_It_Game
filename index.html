@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flood It</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=General+Sans:wght@300;400;500;600;700&family=Cabinet+Grotesk:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══ INTRO SCREEN ═══ -->
+<div id="intro">
+  <canvas id="introCanvas"></canvas>
+  <div class="intro-content">
+    <div class="intro-badge">POLYTECH LILLE · IS3</div>
+    <h1 class="intro-title">
+      <span class="intro-word" style="--i:0">Flood</span>
+      <span class="intro-word accent" style="--i:1">It</span>
+    </h1>
+    <p class="intro-desc">Un jeu de stratégie basé sur l'algorithme Flood Fill. Remplissez la grille d'une seule couleur en un minimum de coups.</p>
+    <button class="intro-btn" id="introPlay">
+      <span class="intro-btn-text">Commencer à jouer</span>
+      <span class="intro-btn-icon">→</span>
+    </button>
+    <div class="intro-credits">Par Amine Nakrou & Hiba Tassa</div>
+  </div>
+</div>
+
+<!-- ═══ GAME APP ═══ -->
+<div id="app" class="app hidden">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo"><span class="logo-dot"></span> Flood<strong>It</strong></div>
+    </div>
+    <div class="topbar-center" id="topbarStats"></div>
+    <div class="topbar-right">
+      <button class="tb-btn" id="soundBtn" title="Son">🔊</button>
+      <button class="tb-btn" id="themeBtn" title="Thème">◑</button>
+      <button class="tb-btn" id="helpBtn" title="Aide">?</button>
+    </div>
+  </div>
+
+  <!-- MAIN GAME -->
+  <div class="game-layout">
+
+    <!-- LEFT PANEL -->
+    <div class="panel panel-left">
+      <div class="panel-section">
+        <div class="panel-title">Partie</div>
+        <div class="config-grid">
+          <div class="cfg">
+            <div class="cfg-label">Grille</div>
+            <div class="cfg-control">
+              <button class="cfg-btn" data-target="gridSize" data-dir="-1">−</button>
+              <span class="cfg-value" id="gridSizeVal">14</span>
+              <button class="cfg-btn" data-target="gridSize" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="cfg">
+            <div class="cfg-label">Couleurs</div>
+            <div class="cfg-control">
+              <button class="cfg-btn" data-target="colorCount" data-dir="-1">−</button>
+              <span class="cfg-value" id="colorCountVal">6</span>
+              <button class="cfg-btn" data-target="colorCount" data-dir="1">+</button>
+            </div>
+          </div>
+        </div>
+        <label class="switch-row" id="challengeToggle">
+          <span class="switch-label">Mode défi</span>
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </label>
+        <button class="play-btn" id="newGameBtn">
+          <span class="play-btn-bg"></span>
+          <span class="play-btn-text">Nouvelle partie</span>
+        </button>
+      </div>
+
+      <!-- LIVE STATS -->
+      <div class="panel-section" id="liveStats" style="display:none">
+        <div class="panel-title">Statistiques</div>
+        <div class="live-grid">
+          <div class="live-stat">
+            <div class="ls-val" id="statMoves">0</div>
+            <div class="ls-label">Coups</div>
+          </div>
+          <div class="live-stat">
+            <div class="ls-val" id="statLimit">∞</div>
+            <div class="ls-label">Limite</div>
+          </div>
+          <div class="live-stat">
+            <div class="ls-val" id="statTime">0:00</div>
+            <div class="ls-label">Temps</div>
+          </div>
+          <div class="live-stat">
+            <div class="ls-val" id="statPct">0%</div>
+            <div class="ls-label">Conquis</div>
+          </div>
+        </div>
+        <div class="progress" id="progressBar" style="display:none">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-label" id="progressLabel"></div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="panel-section" id="actionsPanel" style="display:none">
+        <div class="action-row">
+          <button class="action-btn" id="undoBtn" disabled>
+            <span class="action-icon">↩</span> Annuler
+          </button>
+          <button class="action-btn" id="restartBtn">
+            <span class="action-icon">↺</span> Rejouer
+          </button>
+        </div>
+      </div>
+
+      <!-- BEST -->
+      <div class="panel-section" id="bestPanel" style="display:none">
+        <div class="panel-title">🏆 Record</div>
+        <div class="best-row">
+          <span class="best-config" id="bestConfig">—</span>
+          <span class="best-score" id="bestScore">—</span>
+        </div>
+      </div>
+
+      <!-- SHORTCUTS -->
+      <div class="panel-section shortcuts-section">
+        <div class="panel-title">Raccourcis</div>
+        <div class="shortcut"><kbd>1</kbd>–<kbd>8</kbd> Couleur</div>
+        <div class="shortcut"><kbd>⌘Z</kbd> Annuler</div>
+        <div class="shortcut"><kbd>N</kbd> Nouvelle partie</div>
+        <div class="shortcut"><kbd>S</kbd> Son on/off</div>
+      </div>
+    </div>
+
+    <!-- CENTER: GAME AREA -->
+    <div class="game-center">
+      <!-- PALETTE -->
+      <div class="palette-wrap">
+        <div class="palette" id="palette"></div>
+        <div class="palette-hint" id="paletteHint">Choisissez une couleur</div>
+      </div>
+
+      <!-- BOARD -->
+      <div class="board-area">
+        <div class="board-placeholder" id="placeholder">
+          <div class="ph-icon">🎨</div>
+          <div class="ph-title">Prêt à jouer ?</div>
+          <div class="ph-desc">Configurez la grille et lancez une partie</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+      </div>
+
+      <!-- MESSAGE -->
+      <div class="msg" id="msg"></div>
+
+      <!-- COMBO -->
+      <div class="combo-popup" id="comboPopup"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="app-footer">
+    Flood It — Amine Nakrou & Hiba Tassa · Polytech Lille IS3
+  </div>
+</div>
+
+<!-- ═══ HELP MODAL ═══ -->
+<div class="overlay" id="helpOverlay">
+  <div class="modal">
+    <button class="modal-x" id="helpX">✕</button>
+    <div class="modal-icon">🎨</div>
+    <h2>Comment jouer</h2>
+    <div class="how-grid">
+      <div class="how-step"><div class="how-num">1</div><p>Sélectionnez une <strong>couleur</strong> dans la palette.</p></div>
+      <div class="how-step"><div class="how-num">2</div><p>Cliquez sur une <strong>zone</strong> de la grille.</p></div>
+      <div class="how-step"><div class="how-num">3</div><p>L'algorithme <strong>Flood Fill</strong> propage la couleur aux cases adjacentes de même couleur.</p></div>
+      <div class="how-step"><div class="how-num">4</div><p>Objectif : remplir <strong>toute la grille</strong> en minimum de coups.</p></div>
+    </div>
+    <div class="how-challenge">
+      <span>⚡</span> <strong>Mode défi :</strong> maximum 2×L coups (L = taille de la grille).
+    </div>
+    <button class="cta-btn" id="helpOk">Compris !</button>
+  </div>
+</div>
+
+<!-- ═══ VICTORY ═══ -->
+<div class="overlay" id="victoryOverlay">
+  <div class="modal victory-modal">
+    <div class="victory-particles" id="victoryParticles"></div>
+    <div class="victory-icon" id="victoryIcon">🎉</div>
+    <h2 id="victoryTitle">Victoire !</h2>
+    <p id="victoryText"></p>
+    <div class="victory-stats" id="victoryStats"></div>
+    <button class="cta-btn" id="victoryReplay">Rejouer</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
